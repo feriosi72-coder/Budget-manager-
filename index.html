@@ -665,281 +665,111 @@
             </li>
         </ul>
     </nav>
-
+    <script src="budget-app-core.js"></script>
     <script>
         // ============================================
-        // MODULE CORE - Initialisation et Utilitaires
+        // LOGIQUE SPÉCIFIQUE À L'INTERFACE UTILISATEUR
         // ============================================
-        const BudgetApp = (function() {
-            // --- LOCALSTORAGE UTILS ---
-            function getItem(key) {
-                try {
-                    return JSON.parse(localStorage.getItem(key)) || null;
-                } catch (e) {
-                    console.error('Erreur lecture localStorage:', e);
-                    return null;
+        
+        // Fonction de rafraîchissement de la vue
+        function refreshView(viewId) {
+            const monthKey = BudgetApp.getCurrentMonthKey();
+
+            if (viewId === 'dashboard') {
+                // Mettre à jour les stats du dashboard
+                const revenus = BudgetApp.getTotalRevenus();
+                const charges = BudgetApp.getTotalCharges();
+                const depenses = BudgetApp.getTotalDepenses(monthKey.replace('bm_mois_', ''));
+                const solde = BudgetApp.getSolde(monthKey.replace('bm_mois_', ''));
+
+                document.getElementById('dash-revenus').textContent = BudgetApp.formatEuro(revenus);
+                document.getElementById('dash-charges').textContent = BudgetApp.formatEuro(charges);
+                document.getElementById('dash-depenses').textContent = BudgetApp.formatEuro(depenses);
+
+                const soldeEl = document.getElementById('dash-solde');
+                soldeEl.textContent = BudgetApp.formatEuro(solde);
+                soldeEl.className = 'stat-value ' + (solde >= 0 ? 'positive' : 'negative');
+
+                // Dernières dépenses
+                const data = BudgetApp.getItem(monthKey) || {};
+                const depensesList = data.depenses || [];
+                const tbody = document.getElementById('dash-dernieres-depenses');
+
+                if (depensesList.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="text-muted">Aucune dépense enregistrée</td></tr>';
+                } else {
+                    const recentes = depensesList.slice(-5).reverse();
+                    tbody.innerHTML = recentes.map(dep => `
+                        <tr>
+                            <td>${BudgetApp.formatDate(dep.date)}</td>
+                            <td>${dep.categorie || '-'}</td>
+                            <td>${dep.libelle || '-'}</td>
+                            <td class="${parseFloat(dep.montant) > 0 ? 'text-danger' : ''}">${BudgetApp.formatEuro(dep.montant)}</td>
+                        </tr>
+                    `).join('');
                 }
             }
+        }
 
-            function setItem(key, data) {
-                try {
-                    localStorage.setItem(key, JSON.stringify(data));
-                    return true;
-                } catch (e) {
-                    console.error('Erreur écriture localStorage:', e);
-                    return false;
-                }
-            }
+        // Mettre à jour le header avec le mois et le solde
+        function updateHeader() {
+            const monthKey = BudgetApp.getCurrentMonthKey();
+            const mois = monthKey.replace('bm_mois_', '');
+            const [annee, moisNum] = mois.split('-');
+            const dateObj = new Date(parseInt(annee), parseInt(moisNum) - 1, 1);
+            const moisNom = dateObj.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
 
-            function getCurrentMonthKey() {
-                return 'bm_mois_' + new Date().toISOString().slice(0, 7);
-            }
+            document.getElementById('header-month').textContent =
+                moisNom.charAt(0).toUpperCase() + moisNom.slice(1);
 
-            function generateId() {
-                return String(Date.now()) + Math.random().toString(36).slice(2, 7);
-            }
+            const solde = BudgetApp.getSolde(monthKey.replace('bm_mois_', ''));
+            const soldeEl = document.getElementById('header-solde');
+            soldeEl.textContent = BudgetApp.formatEuro(solde);
+            soldeEl.classList.toggle('negative', solde < 0);
+        }
 
-            // --- FORMAT ---
-            function formatEuro(montant) {
-                if (montant === null || montant === undefined) return '-- €';
-                return new Intl.NumberFormat('fr-FR', { 
-                    style: 'currency', 
-                    currency: 'EUR' 
-                }).format(montant);
-            }
-
-            function formatDate(dateStr) {
-                if (!dateStr) return '--';
-                const date = new Date(dateStr);
-                return date.toLocaleDateString('fr-FR', { 
-                    weekday: 'short',
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric'
-                });
-            }
-
-            // --- CALCULS GLOBAUX ---
-            function getTotalRevenus() {
-                const settings = getItem('bm_settings') || {};
-                const salaire = parseFloat(settings.salaire) || 0;
-                const autresRevenus = parseFloat(settings.autresRevenus) || 0;
-                return salaire + autresRevenus;
-            }
-
-            function getTotalCharges() {
-                const settings = getItem('bm_settings') || {};
-                const charges = settings.chargesFixes || [];
-                return charges.reduce((total, charge) => total + (parseFloat(charge.montant) || 0), 0);
-            }
-
-            function getTotalDepenses(periode) {
-                const data = getItem(periode) || {};
-                const depenses = data.depenses || [];
-                return depenses.reduce((total, dep) => total + (parseFloat(dep.montant) || 0), 0);
-            }
-
-            function getSolde(periode) {
-                const revenus = getTotalRevenus();
-                const charges = getTotalCharges();
-                const depenses = getTotalDepenses(periode);
-                return revenus - charges - depenses;
-            }
-
-            function getDepensesParCategorie(periode) {
-                const data = getItem(periode) || {};
-                const depenses = data.depenses || [];
-                const parCategorie = {};
-                
-                depenses.forEach(dep => {
-                    const cat = dep.categorie || 'Non catégorisé';
-                    parCategorie[cat] = (parCategorie[cat] || 0) + (parseFloat(dep.montant) || 0);
-                });
-                
-                return parCategorie;
-            }
-
-            // --- NAVIGATION ---
-            function showView(viewId) {
-                // Masquer toutes les sections
-                document.querySelectorAll('.view-section').forEach(section => {
-                    section.classList.remove('active');
-                });
-                
-                // Afficher la section demandée
-                const targetSection = document.getElementById('vue-' + viewId);
-                if (targetSection) {
-                    targetSection.classList.add('active');
-                }
-                
-                // Mettre à jour la navigation desktop
-                document.querySelectorAll('.nav-link').forEach(link => {
-                    link.classList.remove('active');
-                    if (link.dataset.view === viewId) {
-                        link.classList.add('active');
+        // Configuration de la navigation
+        function setupNavigation() {
+            // Navigation desktop
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const viewId = this.dataset.view;
+                    if (viewId) {
+                        BudgetApp.showView(viewId);
                     }
                 });
-                
-                // Mettre à jour la navigation mobile
-                document.querySelectorAll('.mobile-nav-link').forEach(link => {
-                    link.classList.remove('active');
-                    if (link.dataset.view === viewId) {
-                        link.classList.add('active');
+            });
+
+            // Navigation mobile
+            document.querySelectorAll('.mobile-nav-link').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const viewId = this.dataset.view;
+                    if (viewId) {
+                        BudgetApp.showView(viewId);
                     }
                 });
-                
-                // Rafraîchir l'affichage selon la vue
-                refreshView(viewId);
-            }
+            });
 
-            function setupNavigation() {
-                // Navigation desktop
-                document.querySelectorAll('.nav-link').forEach(link => {
-                    link.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        const viewId = this.dataset.view;
-                        if (viewId) {
-                            showView(viewId);
-                        }
-                    });
-                });
-                
-                // Navigation mobile
-                document.querySelectorAll('.mobile-nav-link').forEach(link => {
-                    link.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        const viewId = this.dataset.view;
-                        if (viewId) {
-                            showView(viewId);
-                        }
-                    });
-                });
-            }
+            // Écouter les changements de vue pour rafraîchir l'interface
+            window.addEventListener('viewChanged', function(e) {
+                refreshView(e.detail.viewId);
+            });
+        }
 
-            // --- INITIALISATION ---
-            function initApp() {
-                // Vérifier si bm_settings existe, sinon créer structure vide
-                let settings = getItem('bm_settings');
-                if (!settings) {
-                    settings = {
-                        salaire: 0,
-                        autresRevenus: 0,
-                        chargesFixes: [],
-                        categories: [
-                            { id: generateId(), nom: 'Alimentation', budget: 0 },
-                            { id: generateId(), nom: 'Transport', budget: 0 },
-                            { id: generateId(), nom: 'Loisirs', budget: 0 },
-                            { id: generateId(), nom: 'Shopping', budget: 0 },
-                            { id: generateId(), nom: 'Santé', budget: 0 },
-                            { id: generateId(), nom: 'Autre', budget: 0 }
-                        ]
-                    };
-                    setItem('bm_settings', settings);
-                }
-                
-                // Vérifier si un mois en cours existe, sinon le créer
-                const monthKey = getCurrentMonthKey();
-                let moisData = getItem(monthKey);
-                if (!moisData) {
-                    moisData = {
-                        periode: monthKey.replace('bm_mois_', ''),
-                        depenses: [],
-                        createdAt: new Date().toISOString()
-                    };
-                    setItem(monthKey, moisData);
-                }
-                
-                // Configurer la navigation
-                setupNavigation();
-                
-                // Mettre à jour le header
-                updateHeader();
-                
-                // Lancer le rendu de la vue active (dashboard par défaut)
-                showView('dashboard');
-                
-                console.log('Application initialisée avec succès');
-            }
-
-            function updateHeader() {
-                const monthKey = getCurrentMonthKey();
-                const mois = monthKey.replace('bm_mois_', '');
-                const [annee, moisNum] = mois.split('-');
-                const dateObj = new Date(parseInt(annee), parseInt(moisNum) - 1, 1);
-                const moisNom = dateObj.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
-                
-                document.getElementById('header-month').textContent = 
-                    moisNom.charAt(0).toUpperCase() + moisNom.slice(1);
-                
-                const solde = getSolde(monthKey);
-                const soldeEl = document.getElementById('header-solde');
-                soldeEl.textContent = formatEuro(solde);
-                soldeEl.classList.toggle('negative', solde < 0);
-            }
-
-            function refreshView(viewId) {
-                const monthKey = getCurrentMonthKey();
-                
-                if (viewId === 'dashboard') {
-                    // Mettre à jour les stats du dashboard
-                    const revenus = getTotalRevenus();
-                    const charges = getTotalCharges();
-                    const depenses = getTotalDepenses(monthKey);
-                    const solde = getSolde(monthKey);
-                    
-                    document.getElementById('dash-revenus').textContent = formatEuro(revenus);
-                    document.getElementById('dash-charges').textContent = formatEuro(charges);
-                    document.getElementById('dash-depenses').textContent = formatEuro(depenses);
-                    
-                    const soldeEl = document.getElementById('dash-solde');
-                    soldeEl.textContent = formatEuro(solde);
-                    soldeEl.className = 'stat-value ' + (solde >= 0 ? 'positive' : 'negative');
-                    
-                    // Dernières dépenses
-                    const data = getItem(monthKey) || {};
-                    const depensesList = data.depenses || [];
-                    const tbody = document.getElementById('dash-dernieres-depenses');
-                    
-                    if (depensesList.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="4" class="text-muted">Aucune dépense enregistrée</td></tr>';
-                    } else {
-                        const recentes = depensesList.slice(-5).reverse();
-                        tbody.innerHTML = recentes.map(dep => `
-                            <tr>
-                                <td>${formatDate(dep.date)}</td>
-                                <td>${dep.categorie || '-'}</td>
-                                <td>${dep.libelle || '-'}</td>
-                                <td class="${parseFloat(dep.montant) > 0 ? 'text-danger' : ''}">${formatEuro(dep.montant)}</td>
-                            </tr>
-                        `).join('');
-                    }
-                }
-            }
-
-            // Exposer les fonctions publiques
-            return {
-                initApp,
-                getItem,
-                setItem,
-                getCurrentMonthKey,
-                generateId,
-                formatEuro,
-                formatDate,
-                getTotalRevenus,
-                getTotalCharges,
-                getTotalDepenses,
-                getSolde,
-                getDepensesParCategorie,
-                showView,
-                updateHeader
-            };
-        })();
-
-        // ============================================
-        // INITIALISATION AU CHARGEMENT
-        // ============================================
+        // Initialisation au chargement du DOM
         document.addEventListener('DOMContentLoaded', function() {
+            // Initialiser le module core
             BudgetApp.initApp();
+            
+            // Configurer la navigation
+            setupNavigation();
+            
+            // Mettre à jour le header
+            updateHeader();
+            
+            console.log('Application initialisée avec succès');
         });
     </script>
 </body>
