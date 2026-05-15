@@ -561,35 +561,154 @@
                 <section id="vue-parametres" class="view-section">
                     <h2 class="view-title">Paramètres</h2>
                     
+                    <!-- Section Revenus -->
                     <div class="card">
-                        <h3 class="card-title">Revenus mensuels</h3>
-                        <div class="form-group">
-                            <label class="form-label">Salaire net</label>
-                            <input type="number" class="form-input" id="param-salaire" placeholder="0">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="card-title" style="margin-bottom: 0;">Revenus</h3>
+                            <button class="btn btn-primary" id="btn-ajouter-revenu">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                                    <path d="M12 5v14M5 12h14"/>
+                                </svg>
+                                Ajouter un revenu
+                            </button>
                         </div>
-                        <div class="form-group">
-                            <label class="form-label">Autres revenus</label>
-                            <input type="number" class="form-input" id="param-autres-revenus" placeholder="0">
+                        
+                        <div class="table-container" style="margin-bottom: 16px;">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Libellé</th>
+                                        <th>Montant</th>
+                                        <th>Type</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="liste-revenus">
+                                    <tr>
+                                        <td colspan="4" class="text-muted">Aucun revenu configuré</td>
+                                    </tr>
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="2" style="font-weight: 600;">Total revenus</td>
+                                        <td colspan="2" id="total-revenus" class="text-success" style="font-weight: 700;">-- €</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
                         </div>
-                        <button class="btn btn-primary" id="btn-sauvegarder-revenus">Sauvegarder</button>
+                        
+                        <!-- Formulaire d'ajout de revenu (caché par défaut) -->
+                        <div id="form-revenu" style="display: none; border-top: 1px solid var(--border); padding-top: 16px; margin-top: 16px;">
+                            <h4 style="margin-bottom: 16px; font-size: 1rem;">Ajouter/Modifier un revenu</h4>
+                            <input type="hidden" id="revenu-id">
+                            <div class="form-group">
+                                <label class="form-label">Libellé</label>
+                                <input type="text" class="form-input" id="revenu-libelle" placeholder="Ex: Salaire, Prime...">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Montant (€)</label>
+                                <input type="number" class="form-input" id="revenu-montant" placeholder="0" step="0.01" min="0.01">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Type</label>
+                                <select class="form-select" id="revenu-type">
+                                    <option value="recurrent">Récurrent</option>
+                                    <option value="ponctuel">Ponctuel</option>
+                                </select>
+                            </div>
+                            <div class="flex gap-2">
+                                <button class="btn btn-primary" id="btn-valider-revenu">Enregistrer</button>
+                                <button class="btn btn-secondary" id="btn-annuler-revenu">Annuler</button>
+                            </div>
+                        </div>
                     </div>
 
+                    <!-- Section Charges Fixes -->
                     <div class="card">
-                        <h3 class="card-title">Charges fixes</h3>
-                        <div id="liste-charges-fixes">
-                            <p class="text-muted">Aucune charge fixe configurée.</p>
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="card-title" style="margin-bottom: 0;">Charges fixes</h3>
+                            <button class="btn btn-primary" id="btn-ajouter-charge">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                                    <path d="M12 5v14M5 12h14"/>
+                                </svg>
+                                Ajouter une charge
+                            </button>
                         </div>
-                        <button class="btn btn-secondary mt-4" id="btn-ajouter-charge">Ajouter une charge</button>
+                        
+                        <div class="table-container" style="margin-bottom: 16px;">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Libellé</th>
+                                        <th>Montant</th>
+                                        <th>Catégorie</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="liste-charges">
+                                    <tr>
+                                        <td colspan="4" class="text-muted">Aucune charge fixe configurée</td>
+                                    </tr>
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="2" style="font-weight: 600;">Total charges fixes</td>
+                                        <td colspan="2" id="total-charges" class="text-danger" style="font-weight: 700;">-- €</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                        
+                        <!-- Formulaire d'ajout de charge (caché par défaut) -->
+                        <div id="form-charge" style="display: none; border-top: 1px solid var(--border); padding-top: 16px; margin-top: 16px;">
+                            <h4 style="margin-bottom: 16px; font-size: 1rem;">Ajouter/Modifier une charge</h4>
+                            <input type="hidden" id="charge-id">
+                            <div class="form-group">
+                                <label class="form-label">Libellé</label>
+                                <input type="text" class="form-input" id="charge-libelle" placeholder="Ex: Loyer, Assurance...">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Montant (€)</label>
+                                <input type="number" class="form-input" id="charge-montant" placeholder="0" step="0.01" min="0.01">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Catégorie</label>
+                                <select class="form-select" id="charge-categorie">
+                                    <option value="">Sélectionner une catégorie</option>
+                                    <option value="Logement">Logement</option>
+                                    <option value="Transport">Transport</option>
+                                    <option value="Abonnements">Abonnements</option>
+                                    <option value="Santé">Santé</option>
+                                    <option value="Autre">Autre</option>
+                                </select>
+                            </div>
+                            <div class="flex gap-2">
+                                <button class="btn btn-primary" id="btn-valider-charge">Enregistrer</button>
+                                <button class="btn btn-secondary" id="btn-annuler-charge">Annuler</button>
+                            </div>
+                        </div>
                     </div>
 
+                    <!-- Résumé -->
                     <div class="card">
-                        <h3 class="card-title">Catégories de dépenses</h3>
-                        <div id="liste-categories">
-                            <p class="text-muted">Gérez vos catégories de dépenses.</p>
+                        <h3 class="card-title">Résumé</h3>
+                        <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 0;">
+                            <div class="stat-card">
+                                <div class="stat-label">Total revenus</div>
+                                <div class="stat-value positive" id="resume-revenus">-- €</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">Total charges</div>
+                                <div class="stat-value negative" id="resume-charges">-- €</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">Disponible pour dépenses</div>
+                                <div class="stat-value" id="resume-disponible">-- €</div>
+                            </div>
                         </div>
-                        <button class="btn btn-secondary mt-4" id="btn-ajouter-categorie">Ajouter une catégorie</button>
                     </div>
 
+                    <!-- Autres paramètres -->
                     <div class="card">
                         <h3 class="card-title">Données</h3>
                         <button class="btn btn-secondary" id="btn-exporter">Exporter les données</button>
@@ -709,6 +828,279 @@
                     `).join('');
                 }
             }
+            
+            if (viewId === 'parametres') {
+                renderParametres();
+            }
+        }
+        
+        // ============================================
+        // GESTION DES PARAMÈTRES (REVENUS & CHARGES)
+        // ============================================
+        
+        let revenuEnEdition = null;
+        let chargeEnEdition = null;
+        
+        // Charger les paramètres depuis localStorage
+        function loadSettings() {
+            return BudgetApp.getItem('bm_settings') || { revenus: [], charges: [] };
+        }
+        
+        // Sauvegarder les paramètres dans localStorage
+        function saveSettings(settings) {
+            BudgetApp.setItem('bm_settings', settings);
+            renderParametres();
+        }
+        
+        // Afficher/Masquer le formulaire de revenu
+        function toggleFormRevenu(show) {
+            document.getElementById('form-revenu').style.display = show ? 'block' : 'none';
+            if (!show) {
+                document.getElementById('revenu-id').value = '';
+                document.getElementById('revenu-libelle').value = '';
+                document.getElementById('revenu-montant').value = '';
+                document.getElementById('revenu-type').value = 'recurrent';
+                revenuEnEdition = null;
+            }
+        }
+        
+        // Afficher/Masquer le formulaire de charge
+        function toggleFormCharge(show) {
+            document.getElementById('form-charge').style.display = show ? 'block' : 'none';
+            if (!show) {
+                document.getElementById('charge-id').value = '';
+                document.getElementById('charge-libelle').value = '';
+                document.getElementById('charge-montant').value = '';
+                document.getElementById('charge-categorie').value = '';
+                chargeEnEdition = null;
+            }
+        }
+        
+        // Rendu de la liste des revenus
+        function renderRevenus() {
+            const settings = loadSettings();
+            const tbody = document.getElementById('liste-revenus');
+            const totalEl = document.getElementById('total-revenus');
+            
+            if (!settings.revenus || settings.revenus.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-muted">Aucun revenu configuré</td></tr>';
+                totalEl.textContent = '-- €';
+                return;
+            }
+            
+            let total = 0;
+            tbody.innerHTML = settings.revenus.map(revenu => {
+                total += parseFloat(revenu.montant) || 0;
+                const typeLabel = revenu.type === 'recurrent' ? 'Récurrent' : 'Ponctuel';
+                return `
+                    <tr>
+                        <td>${revenu.libelle || '-'}</td>
+                        <td class="text-success">${BudgetApp.formatEuro(revenu.montant)}</td>
+                        <td>${typeLabel}</td>
+                        <td>
+                            <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 0.75rem;" onclick="editRevenu('${revenu.id}')">Modifier</button>
+                            <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 0.75rem; color: var(--danger); border-color: var(--danger);" onclick="deleteRevenu('${revenu.id}')">Supprimer</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+            
+            totalEl.textContent = BudgetApp.formatEuro(total);
+            
+            // Mettre à jour le résumé
+            updateResume();
+        }
+        
+        // Rendu de la liste des charges
+        function renderCharges() {
+            const settings = loadSettings();
+            const tbody = document.getElementById('liste-charges');
+            const totalEl = document.getElementById('total-charges');
+            
+            if (!settings.charges || settings.charges.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-muted">Aucune charge fixe configurée</td></tr>';
+                totalEl.textContent = '-- €';
+                return;
+            }
+            
+            let total = 0;
+            tbody.innerHTML = settings.charges.map(charge => {
+                total += parseFloat(charge.montant) || 0;
+                return `
+                    <tr>
+                        <td>${charge.libelle || '-'}</td>
+                        <td class="text-danger">${BudgetApp.formatEuro(charge.montant)}</td>
+                        <td>${charge.categorie || '-'}</td>
+                        <td>
+                            <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 0.75rem;" onclick="editCharge('${charge.id}')">Modifier</button>
+                            <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 0.75rem; color: var(--danger); border-color: var(--danger);" onclick="deleteCharge('${charge.id}')">Supprimer</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+            
+            totalEl.textContent = BudgetApp.formatEuro(total);
+            
+            // Mettre à jour le résumé
+            updateResume();
+        }
+        
+        // Rendu complet des paramètres
+        function renderParametres() {
+            renderRevenus();
+            renderCharges();
+        }
+        
+        // Mettre à jour le résumé
+        function updateResume() {
+            const settings = loadSettings();
+            const totalRevenus = settings.revenus.reduce((sum, r) => sum + (parseFloat(r.montant) || 0), 0);
+            const totalCharges = settings.charges.reduce((sum, c) => sum + (parseFloat(c.montant) || 0), 0);
+            const disponible = totalRevenus - totalCharges;
+            
+            document.getElementById('resume-revenus').textContent = BudgetApp.formatEuro(totalRevenus);
+            document.getElementById('resume-charges').textContent = BudgetApp.formatEuro(totalCharges);
+            
+            const disponibleEl = document.getElementById('resume-disponible');
+            disponibleEl.textContent = BudgetApp.formatEuro(disponible);
+            disponibleEl.className = 'stat-value ' + (disponible >= 0 ? 'positive' : 'negative');
+        }
+        
+        // Éditer un revenu
+        window.editRevenu = function(id) {
+            const settings = loadSettings();
+            const revenu = settings.revenus.find(r => r.id === id);
+            if (!revenu) return;
+            
+            revenuEnEdition = id;
+            document.getElementById('revenu-id').value = revenu.id;
+            document.getElementById('revenu-libelle').value = revenu.libelle;
+            document.getElementById('revenu-montant').value = revenu.montant;
+            document.getElementById('revenu-type').value = revenu.type;
+            toggleFormRevenu(true);
+        };
+        
+        // Supprimer un revenu
+        window.deleteRevenu = function(id) {
+            if (!confirm('Êtes-vous sûr de vouloir supprimer ce revenu ?')) return;
+            
+            const settings = loadSettings();
+            settings.revenus = settings.revenus.filter(r => r.id !== id);
+            saveSettings(settings);
+        };
+        
+        // Éditer une charge
+        window.editCharge = function(id) {
+            const settings = loadSettings();
+            const charge = settings.charges.find(c => c.id === id);
+            if (!charge) return;
+            
+            chargeEnEdition = id;
+            document.getElementById('charge-id').value = charge.id;
+            document.getElementById('charge-libelle').value = charge.libelle;
+            document.getElementById('charge-montant').value = charge.montant;
+            document.getElementById('charge-categorie').value = charge.categorie;
+            toggleFormCharge(true);
+        };
+        
+        // Supprimer une charge
+        window.deleteCharge = function(id) {
+            if (!confirm('Êtes-vous sûr de vouloir supprimer cette charge ?')) return;
+            
+            const settings = loadSettings();
+            settings.charges = settings.charges.filter(c => c.id !== id);
+            saveSettings(settings);
+        };
+        
+        // Valider et sauvegarder un revenu
+        function validerRevenu() {
+            const libelle = document.getElementById('revenu-libelle').value.trim();
+            const montant = parseFloat(document.getElementById('revenu-montant').value);
+            const type = document.getElementById('revenu-type').value;
+            
+            if (!libelle) {
+                alert('Le libellé est obligatoire');
+                return;
+            }
+            
+            if (!montant || montant <= 0) {
+                alert('Le montant doit être supérieur à 0');
+                return;
+            }
+            
+            const settings = loadSettings();
+            
+            if (revenuEnEdition) {
+                // Modification
+                const index = settings.revenus.findIndex(r => r.id === revenuEnEdition);
+                if (index !== -1) {
+                    settings.revenus[index] = {
+                        id: revenuEnEdition,
+                        libelle,
+                        montant,
+                        type
+                    };
+                }
+            } else {
+                // Ajout
+                settings.revenus.push({
+                    id: BudgetApp.generateId(),
+                    libelle,
+                    montant,
+                    type
+                });
+            }
+            
+            saveSettings(settings);
+            toggleFormRevenu(false);
+        }
+        
+        // Valider et sauvegarder une charge
+        function validerCharge() {
+            const libelle = document.getElementById('charge-libelle').value.trim();
+            const montant = parseFloat(document.getElementById('charge-montant').value);
+            const categorie = document.getElementById('charge-categorie').value;
+            
+            if (!libelle) {
+                alert('Le libellé est obligatoire');
+                return;
+            }
+            
+            if (!montant || montant <= 0) {
+                alert('Le montant doit être supérieur à 0');
+                return;
+            }
+            
+            if (!categorie) {
+                alert('La catégorie est obligatoire');
+                return;
+            }
+            
+            const settings = loadSettings();
+            
+            if (chargeEnEdition) {
+                // Modification
+                const index = settings.charges.findIndex(c => c.id === chargeEnEdition);
+                if (index !== -1) {
+                    settings.charges[index] = {
+                        id: chargeEnEdition,
+                        libelle,
+                        montant,
+                        categorie
+                    };
+                }
+            } else {
+                // Ajout
+                settings.charges.push({
+                    id: BudgetApp.generateId(),
+                    libelle,
+                    montant,
+                    categorie
+                });
+            }
+            
+            saveSettings(settings);
+            toggleFormCharge(false);
         }
 
         // Mettre à jour le header avec le mois et le solde
@@ -755,6 +1147,31 @@
             // Écouter les changements de vue pour rafraîchir l'interface
             window.addEventListener('viewChanged', function(e) {
                 refreshView(e.detail.viewId);
+            });
+            
+            // Gestion des boutons de la vue Paramètres
+            document.getElementById('btn-ajouter-revenu').addEventListener('click', function() {
+                toggleFormRevenu(true);
+            });
+            
+            document.getElementById('btn-annuler-revenu').addEventListener('click', function() {
+                toggleFormRevenu(false);
+            });
+            
+            document.getElementById('btn-valider-revenu').addEventListener('click', function() {
+                validerRevenu();
+            });
+            
+            document.getElementById('btn-ajouter-charge').addEventListener('click', function() {
+                toggleFormCharge(true);
+            });
+            
+            document.getElementById('btn-annuler-charge').addEventListener('click', function() {
+                toggleFormCharge(false);
+            });
+            
+            document.getElementById('btn-valider-charge').addEventListener('click', function() {
+                validerCharge();
             });
         }
 
