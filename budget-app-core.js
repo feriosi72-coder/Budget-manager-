@@ -76,7 +76,7 @@ const BudgetApp = (function() {
             settings = {
                 revenus: [],
                 charges: [],
-                categories: []
+                budget_ideal: []
             };
             setItem('bm_settings', settings);
         }
@@ -88,7 +88,7 @@ const BudgetApp = (function() {
             currentMonth = {
                 id: generateId(),
                 periode: monthKey.replace('bm_mois_', ''),
-                depenses: [],
+                expenses: [],
                 created: new Date().toISOString()
             };
             setItem(monthKey, currentMonth);
@@ -141,10 +141,10 @@ const BudgetApp = (function() {
     function getTotalDepenses(periode) {
         const monthKey = 'bm_mois_' + periode;
         const monthData = getItem(monthKey);
-        if (!monthData || !monthData.depenses) return 0;
+        if (!monthData || !monthData.expenses) return 0;
         
-        return monthData.depenses.reduce((total, depense) => {
-            return total + (parseFloat(depense.montant) || 0);
+        return monthData.expenses.reduce((total, depense) => {
+            return total + (parseFloat(depense.amount) || 0);
         }, 0);
     }
 
@@ -169,13 +169,13 @@ const BudgetApp = (function() {
     function getDepensesParCategorie(periode) {
         const monthKey = 'bm_mois_' + periode;
         const monthData = getItem(monthKey);
-        if (!monthData || !monthData.depenses) return {};
+        if (!monthData || !monthData.expenses) return {};
         
         const parCategorie = {};
         
-        monthData.depenses.forEach(depense => {
-            const categorie = depense.categorie || 'Autre';
-            const montant = parseFloat(depense.montant) || 0;
+        monthData.expenses.forEach(depense => {
+            const categorie = depense.category || 'Autre';
+            const montant = parseFloat(depense.amount) || 0;
             
             if (!parCategorie[categorie]) {
                 parCategorie[categorie] = 0;
@@ -195,19 +195,24 @@ const BudgetApp = (function() {
      * @param {string} viewId - Identifiant de la vue à afficher
      */
     function showView(viewId) {
-        // Masquer toutes les sections
-        document.querySelectorAll('.view-section').forEach(section => {
+        // Masquer toutes les sections (les sections ont id="vue-xxx")
+        document.querySelectorAll('section').forEach(section => {
             section.style.display = 'none';
+            section.classList.remove('active');
         });
 
-        // Afficher la section demandée
-        const targetSection = document.getElementById(viewId);
+        // Afficher la section demandée (par id ou par data-view)
+        let targetSection = document.getElementById('vue-' + viewId);
+        if (!targetSection) {
+            targetSection = document.getElementById(viewId);
+        }
         if (targetSection) {
             targetSection.style.display = 'block';
+            targetSection.classList.add('active');
         }
 
         // Mettre à jour l'état actif de la navigation
-        document.querySelectorAll('.nav-link').forEach(link => {
+        document.querySelectorAll('.nav-link, .mobile-nav-link').forEach(link => {
             link.classList.remove('active');
             if (link.dataset.view === viewId) {
                 link.classList.add('active');
@@ -273,6 +278,37 @@ const BudgetApp = (function() {
     }
 
     // ========================================================================
+    // MISE À JOUR HEADER
+    // ========================================================================
+
+    /**
+     * Met à jour l'en-tête avec le mois en cours et le solde
+     */
+    function updateHeader() {
+        const monthKey = getCurrentMonthKey();
+        const period = monthKey.replace('bm_mois_', '');
+        
+        // Format du mois (ex: "Juin 2025")
+        const [year, month] = period.split('-');
+        const monthNames = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 
+                           'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+        const monthLabel = `${monthNames[parseInt(month) - 1]} ${year}`;
+        
+        // Calcul du solde
+        const solde = getSolde(period);
+        
+        // Mise à jour du DOM
+        const monthEl = document.getElementById('header-month');
+        const balanceEl = document.getElementById('header-balance');
+        
+        if (monthEl) monthEl.textContent = monthLabel;
+        if (balanceEl) {
+            balanceEl.textContent = formatEuro(solde);
+            balanceEl.style.color = solde >= 0 ? 'var(--accent-color)' : 'var(--danger-color)';
+        }
+    }
+
+    // ========================================================================
     // API PUBLIQUE
     // ========================================================================
 
@@ -303,6 +339,9 @@ const BudgetApp = (function() {
         
         // Navigation
         showView: showView,
+        
+        // Header
+        updateHeader: updateHeader,
         
         // Formatage
         formatEuro: formatEuro,
